@@ -1,0 +1,63 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        npm install
+        
+    - name: Install dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        npm install
+        
+    - name: Build Electron app (Windows)
+      if: matrix.os == 'windows-latest'
+      env:
+        ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+      run: |
+        npm run electron:build
+        
+    - name: Build Electron app (macOS)
+      if: matrix.os == 'macos-latest'
+      env:
+        ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+      run: |
+        npm run electron:build
+        
+    - name: Upload artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-installer
+        path: dist-final/*.exe
+        
+    - name: Upload artifacts (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-dmg
+        path: dist-final/*.dmg
