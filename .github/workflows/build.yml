@@ -43,6 +43,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       env:
         ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+        GH_TOKEN: ""
       run: |
         npm run electron:build
         
@@ -50,6 +51,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       env:
         ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+        GH_TOKEN: ""
       run: |
         npm run electron:build
         
