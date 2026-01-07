@@ -35,9 +35,15 @@ jobs:
       run: |
         npm install
         
-    - name: List files after install
+    - name: List files after install (Windows)
+      if: matrix.os == 'windows-latest'
       run: |
         dir
+        
+    - name: List files after install (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        ls -la
         
     - name: Build Electron app (Windows)
       if: matrix.os == 'windows-latest'
@@ -53,9 +59,15 @@ jobs:
       run: |
         npm run electron:build -- --publish never
         
-    - name: List build output
+    - name: List build output (Windows)
+      if: matrix.os == 'windows-latest'
       run: |
         if (Test-Path dist-final) { dir dist-final } else { Write-Output "dist-final directory not found" }
+        
+    - name: List build output (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        ls -la dist-final/ || echo "dist-final directory not found"
         
     - name: Upload artifacts (Windows)
       if: matrix.os == 'windows-latest' && success()
