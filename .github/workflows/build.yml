@@ -35,6 +35,25 @@ jobs:
       run: |
         npm install
         
+    - name: Download platform-tools (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir vendor\platform-tools\win32
+        curl -L -o platform-tools.zip https://dl.google.com/android/repository/platform-tools-latest-windows.zip
+        tar -xf platform-tools.zip -C vendor\platform-tools\win32 --strip-components=1
+        del platform-tools.zip
+        
+    - name: Download platform-tools (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        mkdir -p vendor/platform-tools/darwin
+        curl -L -o platform-tools.zip https://dl.google.com/android/repository/platform-tools-latest-darwin.zip
+        unzip -q platform-tools.zip -d vendor/platform-tools/darwin
+        mv vendor/platform-tools/darwin/platform-tools/* vendor/platform-tools/darwin/
+        rmdir vendor/platform-tools/darwin/platform-tools
+        rm platform-tools.zip
+        chmod +x vendor/platform-tools/darwin/adb
+        
     - name: List files after install (Windows)
       if: matrix.os == 'windows-latest'
       run: |
