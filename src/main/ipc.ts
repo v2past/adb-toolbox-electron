@@ -16,6 +16,13 @@ import {
   type SaveLogFileResult,
   type LogcatStartOptions,
 } from './services/logService';
+import {
+  startScrcpy,
+  stopScrcpy,
+  getScrcpyStatus,
+  type ScrcpyStartOptions,
+  type ScrcpyStatus,
+} from './services/scrcpyService';
 
 function toApiError(error: unknown, defaultCode: string) {
   const fallbackMessage = '发生未知错误';
@@ -140,6 +147,39 @@ export function registerIpcHandlers() {
       return ok<void>(undefined);
     } catch (error) {
       return fail(toApiError(error, 'LOGCAT_STOP_FAILED'));
+    }
+  });
+
+  // 启动 scrcpy：POST /api/scrcpy/start
+  ipcMain.handle(
+    'POST /api/scrcpy/start',
+    async (_event, options: ScrcpyStartOptions): Promise<ApiResponse<void>> => {
+      try {
+        await startScrcpy(options);
+        return ok<void>(undefined);
+      } catch (error) {
+        return fail(toApiError(error, 'SCRCPY_START_FAILED'));
+      }
+    },
+  );
+
+  // 停止 scrcpy：POST /api/scrcpy/stop
+  ipcMain.handle('POST /api/scrcpy/stop', async (): Promise<ApiResponse<void>> => {
+    try {
+      await stopScrcpy();
+      return ok<void>(undefined);
+    } catch (error) {
+      return fail(toApiError(error, 'SCRCPY_STOP_FAILED'));
+    }
+  });
+
+  // 获取 scrcpy 状态：GET /api/scrcpy/status
+  ipcMain.handle('GET /api/scrcpy/status', async (): Promise<ApiResponse<ScrcpyStatus>> => {
+    try {
+      const status = getScrcpyStatus();
+      return ok(status);
+    } catch (error) {
+      return fail(toApiError(error, 'SCRCPY_STATUS_FAILED'));
     }
   });
 }

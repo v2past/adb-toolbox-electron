@@ -52,6 +52,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "vendor/scrcpy",
+        "to": "scrcpy",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {

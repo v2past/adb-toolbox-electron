@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ADBDevice, Settings, ApiResponse } from '@shared/types/models';
+import type { ADBDevice, Settings, ApiResponse, ScrcpyStartOptions, ScrcpyStatus } from '@shared/types/models';
 import type { ExecuteAdbCommandPayload, ExecuteAdbResult } from '@main/services/adbService';
 
 export interface SaveLogsPayload {
@@ -78,6 +78,15 @@ const api = {
     if (!wrapped) return;
     ipcRenderer.removeListener('logs:status', wrapped);
     logStatusListeners.delete(listener);
+  },
+  startScrcpy(options: ScrcpyStartOptions): Promise<ApiResponse<void>> {
+    return ipcRenderer.invoke('POST /api/scrcpy/start', options);
+  },
+  stopScrcpy(): Promise<ApiResponse<void>> {
+    return ipcRenderer.invoke('POST /api/scrcpy/stop');
+  },
+  getScrcpyStatus(): Promise<ApiResponse<ScrcpyStatus>> {
+    return ipcRenderer.invoke('GET /api/scrcpy/status');
   },
 };
 

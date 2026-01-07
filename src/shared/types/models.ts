@@ -60,3 +60,20 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: ApiError;
 }
+
+export interface ScrcpyStartOptions {
+  deviceId: string;
+  windowTitle?: string;
+  windowWidth?: number;
+  windowHeight?: number;
+  alwaysOnTop?: boolean;
+  noBorder?: boolean;
+  stayAwake?: boolean;
+}
+
+export interface ScrcpyStatus {
+  running: boolean;
+  deviceId?: string;
+  windowId?: number;
+  pid?: number;
+}

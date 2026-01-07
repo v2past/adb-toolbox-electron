@@ -54,6 +54,23 @@ jobs:
         rm platform-tools.zip
         chmod +x vendor/platform-tools/darwin/adb
         
+    - name: Download scrcpy (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir vendor\scrcpy\win32
+        curl -L -o scrcpy.zip https://github.com/Genymobile/scrcpy/releases/download/v2.7/scrcpy-win64-v2.7.zip
+        tar -xf scrcpy.zip -C vendor\scrcpy\win32 --strip-components=1
+        del scrcpy.zip
+        
+    - name: Download scrcpy (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        mkdir -p vendor/scrcpy/darwin
+        curl -L -o scrcpy.tar.xz https://github.com/Genymobile/scrcpy/releases/download/v2.7/scrcpy-macos-v2.7.tar.xz
+        tar -xf scrcpy.tar.xz -C vendor/scrcpy/darwin --strip-components=1
+        rm scrcpy.tar.xz
+        chmod +x vendor/scrcpy/darwin/scrcpy
+        
     - name: List files after install (Windows)
       if: matrix.os == 'windows-latest'
       run: |
