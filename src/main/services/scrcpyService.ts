@@ -45,19 +45,25 @@ export async function resolveScrcpyExecutable(): Promise<string> {
   );
 
   if (!isWindows) {
-    candidates.push('/usr/local/bin/scrcpy', '/usr/bin/scrcpy');
+    candidates.push(
+      '/usr/local/bin/scrcpy',
+      '/usr/bin/scrcpy',
+      '/opt/homebrew/bin/scrcpy',
+    );
   }
 
   for (const p of candidates) {
     try {
       await access(p, fsConstants.X_OK);
       await ensureExecutablePermissions(p);
+      console.log(`[scrcpy] Found scrcpy at: ${p}`);
       return p;
     } catch {
       continue;
     }
   }
 
+  console.warn(`[scrcpy] Scrcpy executable not found, using system PATH: ${binaryName}`);
   return binaryName;
 }
 
@@ -67,6 +73,8 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
   }
 
   const scrcpyPath = await resolveScrcpyExecutable();
+  console.log(`[scrcpy] Starting scrcpy with path: ${scrcpyPath}`);
+  
   const args: string[] = [];
 
   args.push('-s', options.deviceId);
@@ -92,31 +100,34 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
     args.push('--stay-awake');
   }
 
+  console.log(`[scrcpy] Command: ${scrcpyPath} ${args.join(' ')}`);
+
   const scrcpyDir = join(scrcpyPath, '..');
 
   scrcpyProcess = spawn(scrcpyPath, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
-    detached: true,
     cwd: scrcpyDir,
   });
 
   scrcpyProcess.on('error', (error) => {
-    console.error('Scrcpy process error:', error);
+    console.error('[scrcpy] Process error:', error);
     scrcpyProcess = null;
     currentWindowId = null;
   });
 
   scrcpyProcess.on('exit', (code, signal) => {
-    console.log(`Scrcpy process exited with code ${code}, signal ${signal}`);
+    console.log(`[scrcpy] Process exited with code ${code}, signal ${signal}`);
     scrcpyProcess = null;
     currentWindowId = null;
   });
 
-  scrcpyProcess.stderr?.on('data', (data) => {
-    console.error('Scrcpy stderr:', data.toString());
+  scrcpyProcess.stdout?.on('data', (data) => {
+    console.log('[scrcpy] stdout:', data.toString());
   });
 
-  scrcpyProcess.unref();
+  scrcpyProcess.stderr?.on('data', (data) => {
+    console.error('[scrcpy] stderr:', data.toString());
+  });
 }
 
 export async function stopScrcpy(): Promise<void> {
