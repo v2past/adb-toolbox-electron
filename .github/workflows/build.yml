@@ -38,7 +38,7 @@ jobs:
     - name: Download platform-tools (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir vendor\platform-tools\win32
+        mkdir vendor\platform-tools\win32 -ErrorAction SilentlyContinue
         curl -L -o platform-tools.zip https://dl.google.com/android/repository/platform-tools-latest-windows.zip
         tar -xf platform-tools.zip -C vendor\platform-tools\win32 --strip-components=1
         del platform-tools.zip
@@ -57,7 +57,7 @@ jobs:
     - name: Download scrcpy (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir vendor\scrcpy\win32
+        mkdir vendor\scrcpy\win32 -ErrorAction SilentlyContinue
         curl -L -o scrcpy.zip https://github.com/Genymobile/scrcpy/releases/download/v2.7/scrcpy-win64-v2.7.zip
         tar -xf scrcpy.zip -C vendor\scrcpy\win32 --strip-components=1
         del scrcpy.zip
