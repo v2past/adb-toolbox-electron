@@ -37,27 +37,25 @@ jobs:
         
     - name: List files after install
       run: |
-        ls -la
+        dir
         
     - name: Build Electron app (Windows)
       if: matrix.os == 'windows-latest'
       env:
         ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-        GH_TOKEN: ""
       run: |
-        npm run electron:build
+        npm run electron:build -- --publish never
         
     - name: Build Electron app (macOS)
       if: matrix.os == 'macos-latest'
       env:
         ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-        GH_TOKEN: ""
       run: |
-        npm run electron:build
+        npm run electron:build -- --publish never
         
     - name: List build output
       run: |
-        ls -la dist-final/ || echo "dist-final directory not found"
+        if (Test-Path dist-final) { dir dist-final } else { Write-Output "dist-final directory not found" }
         
     - name: Upload artifacts (Windows)
       if: matrix.os == 'windows-latest' && success()
