@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
+      fail-fast: false
     
     runs-on: ${{ matrix.os }}
     
@@ -34,6 +35,10 @@ jobs:
       run: |
         npm install
         
+    - name: List files after install
+      run: |
+        ls -la
+        
     - name: Build Electron app (Windows)
       if: matrix.os == 'windows-latest'
       env:
@@ -48,16 +53,22 @@ jobs:
       run: |
         npm run electron:build
         
+    - name: List build output
+      run: |
+        ls -la dist-final/ || echo "dist-final directory not found"
+        
     - name: Upload artifacts (Windows)
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-latest' && success()
       uses: actions/upload-artifact@v4
       with:
         name: windows-installer
         path: dist-final/*.exe
+        if-no-files-found: warn
         
     - name: Upload artifacts (macOS)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest' && success()
       uses: actions/upload-artifact@v4
       with:
         name: macos-dmg
         path: dist-final/*.dmg
+        if-no-files-found: warn
