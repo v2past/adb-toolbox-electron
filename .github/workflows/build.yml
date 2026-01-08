@@ -70,17 +70,37 @@ jobs:
         cp $(which scrcpy) vendor/scrcpy/darwin/
         chmod +x vendor/scrcpy/darwin/scrcpy
         
-        # Find and copy scrcpy-server
+        # Find and copy scrcpy-server - search in multiple locations
+        echo "Searching for scrcpy-server..."
+        
+        # Search in Homebrew Cellar
         SCRCPY_SERVER=$(find /opt/homebrew -name "scrcpy-server" 2>/dev/null | head -1)
+        
+        # If not found, try /usr/local
+        if [ -z "$SCRCPY_SERVER" ]; then
+          SCRCPY_SERVER=$(find /usr/local -name "scrcpy-server" 2>/dev/null | head -1)
+        fi
+        
+        # If still not found, try brew --prefix
+        if [ -z "$SCRCPY_SERVER" ]; then
+          BREW_PREFIX=$(brew --prefix scrcpy 2>/dev/null)
+          if [ -n "$BREW_PREFIX" ]; then
+            SCRCPY_SERVER=$(find "$BREW_PREFIX" -name "scrcpy-server" 2>/dev/null | head -1)
+          fi
+        fi
+        
         if [ -n "$SCRCPY_SERVER" ]; then
           echo "Found scrcpy-server at: $SCRCPY_SERVER"
           cp "$SCRCPY_SERVER" vendor/scrcpy/darwin/
           chmod +x vendor/scrcpy/darwin/scrcpy-server
         else
           echo "Warning: scrcpy-server not found"
+          echo "Listing all scrcpy related files:"
+          find /opt/homebrew -name "*scrcpy*" 2>/dev/null | head -20
         fi
         
         # List files for debugging
+        echo "Contents of vendor/scrcpy/darwin/:"
         ls -la vendor/scrcpy/darwin/
         
     - name: List files after install (Windows)

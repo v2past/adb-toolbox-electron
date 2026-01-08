@@ -26,7 +26,7 @@ export interface ScrcpyStatus {
 let scrcpyProcess: ChildProcessWithoutNullStreams | null = null;
 let currentWindowId: number | null = null;
 
-export async function resolveScrcpyExecutable(): Promise<string> {
+export async function resolveScrcpyExecutable(): Promise<{ path: string; dir: string }> {
   const isWindows = process.platform === 'win32';
   const binaryName = isWindows ? 'scrcpy.exe' : 'scrcpy';
   const platformSegment = process.platform;
@@ -57,15 +57,17 @@ export async function resolveScrcpyExecutable(): Promise<string> {
     try {
       await access(p, fsConstants.X_OK);
       await ensureExecutablePermissions(p);
+      const dir = join(p, '..');
       console.log(`[scrcpy] Found scrcpy at: ${p}`);
-      return p;
+      console.log(`[scrcpy] Scrcpy directory: ${dir}`);
+      return { path: p, dir };
     } catch {
       continue;
     }
   }
 
   console.warn(`[scrcpy] Scrcpy executable not found, using system PATH: ${binaryName}`);
-  return binaryName;
+  return { path: binaryName, dir: '.' };
 }
 
 export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
@@ -73,7 +75,7 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
     throw new Error('Scrcpy is already running');
   }
 
-  const scrcpyPath = await resolveScrcpyExecutable();
+  const { path: scrcpyPath, dir: scrcpyDir } = await resolveScrcpyExecutable();
   console.log(`[scrcpy] Starting scrcpy with path: ${scrcpyPath}`);
 
   const devices = await listDevices();
@@ -116,8 +118,6 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
 
   console.log(`[scrcpy] Command: ${scrcpyPath} ${args.join(' ')}`);
 
-  const scrcpyDir = join(scrcpyPath, '..');
-
   const adbPath = await resolveAdbPathFromSettings();
   const adbDir = join(adbPath, '..');
 
@@ -125,6 +125,15 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
   
   if (process.platform === 'darwin') {
     env.DYLD_LIBRARY_PATH = scrcpyDir;
+    
+    const scrcpyServerPath = join(scrcpyDir, 'scrcpy-server');
+    try {
+      await access(scrcpyServerPath, fsConstants.F_OK);
+      console.log('[scrcpy] scrcpy-server found at:', scrcpyServerPath);
+      env.SCRCPY_SERVER_PATH = scrcpyServerPath;
+    } catch {
+      console.warn('[scrcpy] scrcpy-server NOT found at:', scrcpyServerPath);
+    }
   }
   
   env.PATH = `${adbDir}${process.platform === 'win32' ? ';' : ':'}${env.PATH || ''}`;
@@ -133,6 +142,7 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
   console.log(`[scrcpy] ADB path: ${adbPath}`);
   console.log(`[scrcpy] PATH: ${env.PATH}`);
   console.log(`[scrcpy] Working directory: ${scrcpyDir}`);
+  console.log(`[scrcpy] SCRCPY_SERVER_PATH: ${env.SCRCPY_SERVER_PATH || 'not set'}`);
   
   try {
     await access(join(scrcpyDir, 'scrcpy-server'), fsConstants.F_OK);
