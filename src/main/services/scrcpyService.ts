@@ -132,6 +132,14 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
 
   console.log(`[scrcpy] ADB path: ${adbPath}`);
   console.log(`[scrcpy] PATH: ${env.PATH}`);
+  console.log(`[scrcpy] Working directory: ${scrcpyDir}`);
+  
+  try {
+    await access(join(scrcpyDir, 'scrcpy-server'), fsConstants.F_OK);
+    console.log('[scrcpy] scrcpy-server found in directory');
+  } catch {
+    console.warn('[scrcpy] scrcpy-server NOT found in directory');
+  }
 
   scrcpyProcess = spawn(scrcpyPath, args, {
     stdio: ['ignore', 'pipe', 'pipe'],

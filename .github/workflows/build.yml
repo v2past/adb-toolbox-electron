@@ -68,8 +68,20 @@ jobs:
         mkdir -p vendor/scrcpy/darwin
         brew install scrcpy
         cp $(which scrcpy) vendor/scrcpy/darwin/
-        cp $(which scrcpy-server) vendor/scrcpy/darwin/ 2>/dev/null || true
         chmod +x vendor/scrcpy/darwin/scrcpy
+        
+        # Find and copy scrcpy-server
+        SCRCPY_SERVER=$(find /opt/homebrew -name "scrcpy-server" 2>/dev/null | head -1)
+        if [ -n "$SCRCPY_SERVER" ]; then
+          echo "Found scrcpy-server at: $SCRCPY_SERVER"
+          cp "$SCRCPY_SERVER" vendor/scrcpy/darwin/
+          chmod +x vendor/scrcpy/darwin/scrcpy-server
+        else
+          echo "Warning: scrcpy-server not found"
+        fi
+        
+        # List files for debugging
+        ls -la vendor/scrcpy/darwin/
         
     - name: List files after install (Windows)
       if: matrix.os == 'windows-latest'
