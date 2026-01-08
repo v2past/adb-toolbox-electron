@@ -4,6 +4,7 @@ import { constants as fsConstants } from 'fs';
 import { join } from 'path';
 import { app } from 'electron';
 import { ensureExecutablePermissions } from '../platform/permissions';
+import { listDevices } from './adbService';
 
 export interface ScrcpyStartOptions {
   deviceId: string;
@@ -74,6 +75,19 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
 
   const scrcpyPath = await resolveScrcpyExecutable();
   console.log(`[scrcpy] Starting scrcpy with path: ${scrcpyPath}`);
+
+  const devices = await listDevices();
+  const device = devices.find(d => d.id === options.deviceId);
+  
+  if (!device) {
+    throw new Error(`Device ${options.deviceId} not found. Please check device connection.`);
+  }
+
+  if (device.status !== 'device') {
+    throw new Error(`Device ${options.deviceId} is not ready. Status: ${device.status}`);
+  }
+
+  console.log(`[scrcpy] Device found: ${device.id} (${device.model})`);
   
   const args: string[] = [];
 
@@ -115,6 +129,9 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
     env,
   });
 
+  let stderrOutput = '';
+  let stdoutOutput = '';
+
   scrcpyProcess.on('error', (error) => {
     console.error('[scrcpy] Process error:', error);
     scrcpyProcess = null;
@@ -123,16 +140,26 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
 
   scrcpyProcess.on('exit', (code, signal) => {
     console.log(`[scrcpy] Process exited with code ${code}, signal ${signal}`);
+    if (stderrOutput) {
+      console.error('[scrcpy] stderr output:', stderrOutput);
+    }
+    if (stdoutOutput) {
+      console.log('[scrcpy] stdout output:', stdoutOutput);
+    }
     scrcpyProcess = null;
     currentWindowId = null;
   });
 
   scrcpyProcess.stdout?.on('data', (data) => {
-    console.log('[scrcpy] stdout:', data.toString());
+    const text = data.toString();
+    stdoutOutput += text;
+    console.log('[scrcpy] stdout:', text);
   });
 
   scrcpyProcess.stderr?.on('data', (data) => {
-    console.error('[scrcpy] stderr:', data.toString());
+    const text = data.toString();
+    stderrOutput += text;
+    console.error('[scrcpy] stderr:', text);
   });
 
   return new Promise((resolve, reject) => {
@@ -148,13 +175,21 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
     scrcpyProcess?.once('exit', (code) => {
       clearTimeout(timeout);
       if (code !== null && code !== 0) {
-        reject(new Error(`Scrcpy process exited with code ${code}`));
+        let errorMsg = `Scrcpy process exited with code ${code}`;
+        if (stderrOutput) {
+          errorMsg += `\nError output: ${stderrOutput}`;
+        }
+        reject(new Error(errorMsg));
       }
     });
 
     scrcpyProcess?.once('error', (error) => {
       clearTimeout(timeout);
-      reject(error);
+      let errorMsg = `Scrcpy process error: ${error.message}`;
+      if (stderrOutput) {
+        errorMsg += `\nError output: ${stderrOutput}`;
+      }
+      reject(new Error(errorMsg));
     });
   });
 }
