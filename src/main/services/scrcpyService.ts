@@ -4,7 +4,7 @@ import { constants as fsConstants } from 'fs';
 import { join } from 'path';
 import { app } from 'electron';
 import { ensureExecutablePermissions } from '../platform/permissions';
-import { listDevices } from './adbService';
+import { listDevices, resolveAdbPathFromSettings } from './adbService';
 
 export interface ScrcpyStartOptions {
   deviceId: string;
@@ -118,10 +118,20 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
 
   const scrcpyDir = join(scrcpyPath, '..');
 
+  const adbPath = await resolveAdbPathFromSettings();
+  const adbDir = join(adbPath, '..');
+
   const env = { ...process.env };
+  
   if (process.platform === 'darwin') {
     env.DYLD_LIBRARY_PATH = scrcpyDir;
   }
+  
+  env.PATH = `${adbDir}${process.platform === 'win32' ? ';' : ':'}${env.PATH || ''}`;
+  env.ADB = adbPath;
+
+  console.log(`[scrcpy] ADB path: ${adbPath}`);
+  console.log(`[scrcpy] PATH: ${env.PATH}`);
 
   scrcpyProcess = spawn(scrcpyPath, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
