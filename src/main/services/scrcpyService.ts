@@ -104,9 +104,15 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
 
   const scrcpyDir = join(scrcpyPath, '..');
 
+  const env = { ...process.env };
+  if (process.platform === 'darwin') {
+    env.DYLD_LIBRARY_PATH = scrcpyDir;
+  }
+
   scrcpyProcess = spawn(scrcpyPath, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
     cwd: scrcpyDir,
+    env,
   });
 
   scrcpyProcess.on('error', (error) => {
@@ -127,6 +133,29 @@ export async function startScrcpy(options: ScrcpyStartOptions): Promise<void> {
 
   scrcpyProcess.stderr?.on('data', (data) => {
     console.error('[scrcpy] stderr:', data.toString());
+  });
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      if (scrcpyProcess?.killed) {
+        reject(new Error('Scrcpy process failed to start'));
+        return;
+      }
+      console.log('[scrcpy] Process started successfully');
+      resolve();
+    }, 2000);
+
+    scrcpyProcess?.once('exit', (code) => {
+      clearTimeout(timeout);
+      if (code !== null && code !== 0) {
+        reject(new Error(`Scrcpy process exited with code ${code}`));
+      }
+    });
+
+    scrcpyProcess?.once('error', (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
   });
 }
 
