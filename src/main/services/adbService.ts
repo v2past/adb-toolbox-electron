@@ -46,7 +46,7 @@ export interface ExecuteAdbResult {
   filePath?: string;
 }
 
-async function resolveAdbPathFromSettings(): Promise<string> {
+export async function resolveAdbPathFromSettings(): Promise<string> {
   const settings = await getSettings();
   const customPath = settings.adbPath && settings.adbPath.trim() ? settings.adbPath.trim() : undefined;
   const adbPath = await resolveAdbExecutable(customPath);
