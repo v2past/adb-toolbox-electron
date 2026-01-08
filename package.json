@@ -65,7 +65,7 @@
       "target": [
         "nsis"
       ],
-      "icon": "logo.png",
+      "icon": "build/icons/icon.ico",
       "sign": null
     },
     "mac": {
@@ -73,7 +73,7 @@
         "dmg",
         "zip"
       ],
-      "icon": "logo.png"
+      "icon": "build/icons/icon.icns"
     },
     "linux": {
       "target": [
